@@ -14,7 +14,7 @@ import UserAssignments from './components/UserAssignments/index'
 import { useTheme } from './contexts/ThemeContext'
 
 // API 基础 URL，可以从环境变量或配置中读取
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://45.62.104.227:3001'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
 // 默认自动刷新间隔：50分钟
 const DEFAULT_REFRESH_INTERVAL = 50 * 60 * 1000

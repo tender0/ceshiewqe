@@ -76,7 +76,7 @@ async function init() {
         client_id_hash VARCHAR(255),
         region VARCHAR(50),
         client_id VARCHAR(255),
-        client_secret VARCHAR(255),
+        client_secret TEXT,
         sso_session_id VARCHAR(255),
         id_token TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

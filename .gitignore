@@ -34,3 +34,5 @@ server/.env
 server/data.db
 server/node_modules/
 *.db
+.env
+admin-web/.env
