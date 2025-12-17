@@ -63,12 +63,11 @@ function Login({ onLogin, onSwitchToRegister, apiBaseUrl }) {
             <div className="relative">
               <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${colors.textMuted}`} size={18} />
               <input
-                type="email"
+                type="text"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.trim())}
                 className={`w-full pl-10 pr-4 py-3 ${colors.input} border ${colors.cardBorder} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${colors.text}`}
                 placeholder="请输入邮箱"
-                required
               />
             </div>
           </div>

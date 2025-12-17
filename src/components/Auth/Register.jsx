@@ -20,6 +20,13 @@ function Register({ onRegister, onSwitchToLogin, apiBaseUrl }) {
       return
     }
 
+    // 邮箱格式验证
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      showError('错误', '请输入正确的邮箱格式')
+      return
+    }
+
     if (password.length < 6) {
       showError('错误', '密码长度至少6位')
       return
@@ -75,12 +82,11 @@ function Register({ onRegister, onSwitchToLogin, apiBaseUrl }) {
             <div className="relative">
               <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${colors.textMuted}`} size={18} />
               <input
-                type="email"
+                type="text"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.trim())}
                 className={`w-full pl-10 pr-4 py-3 ${colors.input} border ${colors.cardBorder} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${colors.text}`}
                 placeholder="请输入邮箱"
-                required
               />
             </div>
           </div>
