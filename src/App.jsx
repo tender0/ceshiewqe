@@ -6,16 +6,27 @@ import Home from './components/Home'
 import AccountManager from './components/AccountManager/index'
 import KiroConfig from './components/KiroConfig/index'
 import AuthCallback from './components/AuthCallback'
+import Auth from './components/Auth/index'
+import AdminLogin from './components/AdminPanel/AdminLogin'
+import AdminPanel from './components/AdminPanel/index'
+import UserAssignments from './components/UserAssignments/index'
 
 import { useTheme } from './contexts/ThemeContext'
+
+// API 基础 URL，可以从环境变量或配置中读取
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
 // 默认自动刷新间隔：50分钟
 const DEFAULT_REFRESH_INTERVAL = 50 * 60 * 1000
 
 function App() {
   const [user, setUser] = useState(null)
+  const [admin, setAdmin] = useState(null)
+  const [authToken, setAuthToken] = useState(null)
+  const [adminToken, setAdminToken] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeMenu, setActiveMenu] = useState('home')
+  const [isAdminMode, setIsAdminMode] = useState(false)
   const { colors } = useTheme()
   const refreshTimerRef = useRef(null)
 
@@ -126,6 +137,23 @@ function App() {
   }
 
   useEffect(() => {
+    // 检查本地存储的认证信息
+    const storedToken = localStorage.getItem('auth_token')
+    const storedUser = localStorage.getItem('user')
+    const storedAdminToken = localStorage.getItem('admin_token')
+    const storedAdmin = localStorage.getItem('admin')
+
+    if (storedToken && storedUser) {
+      setAuthToken(storedToken)
+      setUser(JSON.parse(storedUser))
+    }
+
+    if (storedAdminToken && storedAdmin) {
+      setAdminToken(storedAdminToken)
+      setAdmin(JSON.parse(storedAdmin))
+      setIsAdminMode(true)
+    }
+
     checkAuth()
     
     // 检查是否是回调页面
@@ -171,26 +199,65 @@ function App() {
     }
   }
 
-  const handleLogin = (loggedInUser) => {
-    if (loggedInUser) {
-      setUser(loggedInUser)
-    }
-    checkAuth()
+  const handleUserAuth = (loggedInUser, token) => {
+    setUser(loggedInUser)
+    setAuthToken(token)
+    localStorage.setItem('auth_token', token)
+    localStorage.setItem('user', JSON.stringify(loggedInUser))
+    setLoading(false)
   }
 
-  const handleLogout = async () => {
-    await invoke('logout')
+  const handleAdminAuth = (loggedInAdmin, token) => {
+    setAdmin(loggedInAdmin)
+    setAdminToken(token)
+    setIsAdminMode(true)
+    localStorage.setItem('admin_token', token)
+    localStorage.setItem('admin', JSON.stringify(loggedInAdmin))
+  }
+
+  const handleUserLogout = async () => {
+    await invoke('logout').catch(() => {})
     setUser(null)
+    setAuthToken(null)
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user')
+  }
+
+  const handleAdminLogout = () => {
+    setAdmin(null)
+    setAdminToken(null)
+    setIsAdminMode(false)
+    localStorage.removeItem('admin_token')
+    localStorage.removeItem('admin')
   }
 
   const renderContent = () => {
     switch (activeMenu) {
       case 'home': return <Home onNavigate={setActiveMenu} />
       case 'token': return <AccountManager />
+      case 'assignments': return <UserAssignments apiBaseUrl={API_BASE_URL} token={authToken} />
       case 'kiro-config': return <KiroConfig />
       case 'callback': return <AuthCallback />
       default: return <Home />
     }
+  }
+
+  // 如果未登录，显示登录页面
+  if (!user && !admin && !loading) {
+    // 检查是否是管理员模式（通过 URL 参数或特殊路径）
+    const url = new URL(window.location.href)
+    const isAdminPath = url.searchParams.get('admin') === 'true' || url.pathname.includes('/admin')
+    
+    if (isAdminPath) {
+      return <AdminLogin onLogin={handleAdminAuth} apiBaseUrl={API_BASE_URL} />
+    }
+    
+    return <Auth onAuthSuccess={handleUserAuth} apiBaseUrl={API_BASE_URL} />
+  }
+
+  // 管理员模式
+  if (isAdminMode && admin && adminToken) {
+    return <AdminPanel apiBaseUrl={API_BASE_URL} token={adminToken} onLogout={handleAdminLogout} />
   }
 
   if (loading) {
@@ -207,7 +274,9 @@ function App() {
         activeMenu={activeMenu} 
         onMenuChange={setActiveMenu}
         user={user}
-        onLogout={handleLogout}
+        onLogout={handleUserLogout}
+        apiBaseUrl={API_BASE_URL}
+        authToken={authToken}
       />
       <main className="flex-1 overflow-hidden">
         {renderContent()}

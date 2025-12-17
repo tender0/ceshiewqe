@@ -7,8 +7,6 @@ import { useAccounts } from './hooks/useAccounts'
 import AccountHeader from './AccountHeader'
 import AccountTable from './AccountTable'
 import AccountPagination from './AccountPagination'
-import AddAccountModal from './AddAccountModal'
-import ImportAccountModal from './ImportAccountModal'
 import RefreshProgressModal from './RefreshProgressModal'
 import AccountDetailModal from '../AccountDetailModal'
 import EditAccountModal from './EditAccountModal'
@@ -24,8 +22,6 @@ function AccountManager() {
   const [currentPage, setCurrentPage] = useState(1)
   const [editingAccount, setEditingAccount] = useState(null)
   const [editingLabelAccount, setEditingLabelAccount] = useState(null)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showImportModal, setShowImportModal] = useState(false)
   const [copiedId, setCopiedId] = useState(null)
   
   // 切换账号弹窗状态
@@ -49,7 +45,6 @@ function AccountManager() {
     setSwitchingId,
     autoRefreshAll,
     handleRefreshStatus,
-    handleExport,
   } = useAccounts()
 
   const filteredAccounts = useMemo(() =>
@@ -206,9 +201,6 @@ function AccountManager() {
         onSearchChange={handleSearchChange}
         selectedCount={selectedIds.length}
         onBatchDelete={onBatchDelete}
-        onAdd={() => setShowAddModal(true)}
-        onImport={() => setShowImportModal(true)}
-        onExport={() => handleExport(selectedIds)}
         onRefreshAll={() => autoRefreshAll(accounts, true)}
         autoRefreshing={autoRefreshing}
         lastRefreshTime={lastRefreshTime}
@@ -228,7 +220,6 @@ function AccountManager() {
         onEdit={setEditingAccount}
         onEditLabel={setEditingLabelAccount}
         onDelete={handleDelete}
-        onAdd={() => setShowAddModal(true)}
         refreshingId={refreshingId}
         switchingId={switchingId}
         localToken={localToken}
@@ -250,9 +241,7 @@ function AccountManager() {
           onClose={() => { setEditingAccount(null); loadAccounts() }}
         />
       )}
-      {showAddModal && (<AddAccountModal onClose={() => setShowAddModal(false)} onSuccess={loadAccounts} />)}
       {editingLabelAccount && (<EditAccountModal account={editingLabelAccount} onClose={() => setEditingLabelAccount(null)} onSuccess={loadAccounts} />)}
-      {showImportModal && (<ImportAccountModal onClose={() => setShowImportModal(false)} onSuccess={loadAccounts} />)}
       {autoRefreshing && (<RefreshProgressModal refreshProgress={refreshProgress} />)}
       
       {/* 切换账号弹窗 */}

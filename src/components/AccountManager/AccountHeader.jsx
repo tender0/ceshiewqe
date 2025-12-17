@@ -1,4 +1,4 @@
-import { Search, Download, Upload, RefreshCw, Trash2, Plus, Sparkles } from 'lucide-react'
+import { Search, RefreshCw, Trash2, Sparkles } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useI18n } from '../../i18n.jsx'
 
@@ -7,9 +7,6 @@ function AccountHeader({
   onSearchChange,
   selectedCount,
   onBatchDelete,
-  onAdd,
-  onImport,
-  onExport,
   onRefreshAll,
   autoRefreshing,
   lastRefreshTime,
@@ -59,28 +56,6 @@ function AccountHeader({
               <Trash2 size={14} />{t('common.delete')} ({selectedCount})
             </button>
           )}
-          <button 
-            onClick={onAdd} 
-            className="btn-icon px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-sm font-medium hover:from-blue-600 hover:to-blue-700 flex items-center gap-1.5 shadow-lg shadow-blue-500/25 transition-all hover:shadow-blue-500/40"
-          >
-            <Plus size={16} />{t('common.add')}
-          </button>
-          <button 
-            onClick={onImport} 
-            className={`btn-icon px-3 py-2 ${colors.card} border ${colors.cardBorder} rounded-xl ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'} transition-all flex items-center gap-1.5`} 
-            title={t('accounts.import')}
-          >
-            <Upload size={16} className={colors.textMuted} />
-            <span className={`text-sm ${colors.textMuted}`}>{t('accounts.import')}</span>
-          </button>
-          <button 
-            onClick={onExport} 
-            className={`btn-icon px-3 py-2 ${colors.card} border ${colors.cardBorder} rounded-xl ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'} transition-all flex items-center gap-1.5`} 
-            title={t('accounts.export')}
-          >
-            <Download size={16} className={colors.textMuted} />
-            <span className={`text-sm ${colors.textMuted}`}>{t('accounts.export')}</span>
-          </button>
           <button 
             onClick={onRefreshAll} 
             disabled={autoRefreshing} 

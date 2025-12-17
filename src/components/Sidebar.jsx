@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app'
-import { Home, Key, User, Sun, Moon, Palette, Settings2, Languages } from 'lucide-react'
+import { Home, Key, User, Sun, Moon, Palette, Settings2, Languages, Bell } from 'lucide-react'
 import { useTheme, themes } from '../contexts/ThemeContext'
 import { useI18n, locales } from '../i18n.jsx'
 
@@ -10,15 +10,17 @@ function useMenuItems() {
   return [
     { id: 'home', label: t('nav.home'), icon: Home },
     { id: 'token', label: t('nav.accounts'), icon: Key },
+    { id: 'assignments', label: '账号分配', icon: Bell },
     { id: 'kiro-config', label: t('nav.kiroConfig'), icon: Settings2 },
   ]
 }
 
-function Sidebar({ activeMenu, onMenuChange }) {
+function Sidebar({ activeMenu, onMenuChange, apiBaseUrl, authToken }) {
   const [localToken, setLocalToken] = useState(null)
   const [showThemeMenu, setShowThemeMenu] = useState(false)
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [version, setVersion] = useState('')
+  const [pendingAssignments, setPendingAssignments] = useState(0)
   const { theme, setTheme, colors } = useTheme()
   const { locale, setLocale, loading: langLoading } = useI18n()
   const menuItems = useMenuItems()
@@ -27,6 +29,28 @@ function Sidebar({ activeMenu, onMenuChange }) {
     invoke('get_kiro_local_token').then(setLocalToken).catch(() => {})
     getVersion().then(setVersion)
   }, [])
+
+  // 检查待接受的账号分配
+  useEffect(() => {
+    if (authToken && apiBaseUrl) {
+      const checkAssignments = async () => {
+        try {
+          const response = await fetch(`${apiBaseUrl}/api/user/assignments/pending`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          })
+          if (response.ok) {
+            const data = await response.json()
+            setPendingAssignments(data.assignments?.length || 0)
+          }
+        } catch (error) {
+          console.error('Failed to check assignments:', error)
+        }
+      }
+      checkAssignments()
+      const interval = setInterval(checkAssignments, 30000) // 每30秒检查一次
+      return () => clearInterval(interval)
+    }
+  }, [authToken, apiBaseUrl])
 
   const themeIcons = { light: Sun, dark: Moon, purple: Palette, green: Palette }
   const ThemeIcon = themeIcons[theme] || Sun
@@ -53,11 +77,12 @@ function Sidebar({ activeMenu, onMenuChange }) {
         {menuItems.map((item, index) => {
           const Icon = item.icon
           const isActive = activeMenu === item.id
+          const hasNotification = item.id === 'assignments' && pendingAssignments > 0
           return (
             <button
               key={item.id}
               onClick={() => onMenuChange(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all rounded-xl group animate-slide-in-left ${
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all rounded-xl group animate-slide-in-left relative ${
                 isActive ? `${colors.sidebarActive} font-medium shadow-sm` : `${colors.sidebarText} ${colors.sidebarHover}`
               }`}
               style={{ animationDelay: `${0.15 + index * 0.05}s` }}
@@ -69,7 +94,10 @@ function Sidebar({ activeMenu, onMenuChange }) {
                 <span className="text-sm">{item.label}</span>
                 {item.desc && <p className={`text-xs ${colors.sidebarMuted} truncate`}>{item.desc}</p>}
               </div>
-              {isActive && (
+              {hasNotification && (
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              )}
+              {isActive && !hasNotification && (
                 <div className="w-1.5 h-1.5 rounded-full bg-white/80 animate-pulse" />
               )}
             </button>

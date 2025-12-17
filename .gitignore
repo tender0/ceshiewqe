@@ -27,6 +27,10 @@ src-tauri/target/
 
 # Docs (internal)
 docs/
-
-docs/
 scripts/
+
+# Server
+server/.env
+server/data.db
+server/node_modules/
+*.db

@@ -1,4 +1,4 @@
-import { Users, Plus } from 'lucide-react'
+import { Users } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useI18n } from '../../i18n.jsx'
 import AccountCard from './AccountCard'
@@ -16,7 +16,6 @@ function AccountTable({
   onEdit,
   onEditLabel,
   onDelete,
-  onAdd,
   refreshingId,
   switchingId,
   localToken,
@@ -73,22 +72,6 @@ function AccountTable({
               isCurrentAccount={localToken?.refreshToken && account.refreshToken === localToken.refreshToken}
             />
           ))}
-          {/* 添加账号卡片 */}
-          <button
-            onClick={onAdd}
-            className={`rounded-2xl border-2 border-dashed transition-all duration-200 min-h-[280px] flex flex-col items-center justify-center gap-3 ${
-              isDark 
-                ? 'border-gray-700 hover:border-gray-500 hover:bg-white/5' 
-                : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-            }`}
-          >
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              isDark ? 'bg-white/10' : 'bg-gray-100'
-            }`}>
-              <Plus size={24} className={colors.textMuted} />
-            </div>
-            <span className={`text-sm font-medium ${colors.textMuted}`}>{t('common.addAccount')}</span>
-          </button>
         </div>
       )}
     </div>
