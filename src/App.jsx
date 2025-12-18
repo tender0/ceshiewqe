@@ -13,8 +13,8 @@ import UserAssignments from './components/UserAssignments/index'
 
 import { useTheme } from './contexts/ThemeContext'
 
-// API 基础 URL，可以从环境变量或配置中读取
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+// API 基础 URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.tender12321.com'
 
 // 默认自动刷新间隔：50分钟
 const DEFAULT_REFRESH_INTERVAL = 50 * 60 * 1000
