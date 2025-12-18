@@ -11,13 +11,14 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// CORS 配置 - 生产环境请限制允许的域名
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN || '*',  // 生产环境设置为具体域名
+// CORS 配置 - 允许所有来源
+app.use(cors({
+  origin: true,
   credentials: true,
-  optionsSuccessStatus: 200
-}
-app.use(cors(corsOptions))
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
+
 app.use(express.json({ limit: '10mb' }))  // 限制请求体大小
 
 // 简单的请求频率限制

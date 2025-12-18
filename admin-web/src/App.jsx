@@ -13,6 +13,8 @@ function App() {
     }
   }, [token])
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://45.62.104.227:3001'
+
   const verifyToken = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/admin/verify`, {
