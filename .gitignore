@@ -8,9 +8,11 @@ target/
 # IDE
 .idea/
 .vscode/
-.kiro/
 *.swp
 *.swo
+
+# Kiro specs (uncomment to ignore)
+# .kiro/
 
 # OS
 .DS_Store

@@ -4,24 +4,20 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.5.1)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
 
 jobs:
-  release:
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: windows-latest
-            target: ''
-          - platform: macos-latest
-            target: 'x86_64-apple-darwin'
-          - platform: macos-latest
-            target: 'aarch64-apple-darwin'
-
-    runs-on: ${{ matrix.platform }}
-
+  # macOS 通用版 (Universal Binary - 同时支持 Intel 和 Apple Silicon)
+  build-macos:
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,22 +30,76 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
 
-      - name: Clean and install dependencies
-        shell: bash
-        run: |
-          rm -rf node_modules package-lock.json
-          npm install
+      - name: Install dependencies
+        run: npm install
 
-      - name: Build and release
-        uses: tauri-apps/tauri-action@v0.6
+      - name: Build macOS Universal Binary
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Kiro Account Manager ${{ github.ref_name }}'
-          releaseBody: '请查看 CHANGELOG 了解更新内容。'
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: 'Kiro Account Manager ${{ github.event.inputs.tag || github.ref_name }}'
+          releaseBody: |
+            ## 🎉 Kiro Account Manager ${{ github.event.inputs.tag || github.ref_name }}
+            
+            ### 📦 下载说明
+            - **Windows**: 下载 `.msi` 或 `_x64-setup.exe` 文件
+            - **macOS (通用版)**: 下载 `_universal.dmg` - 同时支持 Intel 和 Apple Silicon Mac
+            
+            ### ✨ 主要功能
+            - 🔐 多账号管理与切换
+            - 📊 配额监控与自动刷新
+            - 🎨 深色/浅色主题
+            - 🌍 中文/英文/俄文支持
+            
+            ### 📝 更新日志
+            查看完整更新日志请访问 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.target && format('--target {0}', matrix.target) || '' }}
+          args: --target universal-apple-darwin
+
+  # Windows 版本
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Windows
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: 'Kiro Account Manager ${{ github.event.inputs.tag || github.ref_name }}'
+          releaseBody: |
+            ## 🎉 Kiro Account Manager ${{ github.event.inputs.tag || github.ref_name }}
+            
+            ### 📦 下载说明
+            - **Windows**: 下载 `.msi` 或 `_x64-setup.exe` 文件
+            - **macOS (通用版)**: 下载 `_universal.dmg` - 同时支持 Intel 和 Apple Silicon Mac
+            
+            ### ✨ 主要功能
+            - 🔐 多账号管理与切换
+            - 📊 配额监控与自动刷新
+            - 🎨 深色/浅色主题
+            - 🌍 中文/英文/俄文支持
+            
+            ### 📝 更新日志
+            查看完整更新日志请访问 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+          releaseDraft: false
+          prerelease: false

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app'
-import { Home, Key, User, Sun, Moon, Palette, Settings2, Languages, Bell } from 'lucide-react'
+import { Home, Key, User, Sun, Moon, Palette, Settings2, Languages, Bell, LogOut } from 'lucide-react'
 import { useTheme, themes } from '../contexts/ThemeContext'
 import { useI18n, locales } from '../i18n.jsx'
 
@@ -15,7 +15,7 @@ function useMenuItems() {
   ]
 }
 
-function Sidebar({ activeMenu, onMenuChange, apiBaseUrl, authToken }) {
+function Sidebar({ activeMenu, onMenuChange, apiBaseUrl, authToken, user, onLogout }) {
   const [localToken, setLocalToken] = useState(null)
   const [showThemeMenu, setShowThemeMenu] = useState(false)
   const [showLangMenu, setShowLangMenu] = useState(false)
@@ -123,6 +123,31 @@ function Sidebar({ activeMenu, onMenuChange, apiBaseUrl, authToken }) {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 用户信息区域 */}
+      {user && (
+        <div className={`mx-3 mb-3 ${colors.sidebarCard} rounded-xl p-3 animate-fade-in-up`} style={{ animationDelay: '0.55s' }}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-sm font-medium text-blue-300 transition-transform hover:scale-110">
+              <User size={14} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium truncate" title={user.email}>
+                {user.email}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onLogout}
+            className={`mt-2 w-full text-xs text-red-400 hover:text-red-300 
+                       flex items-center justify-center gap-1 py-1.5 
+                       rounded-lg hover:bg-red-500/10 transition-colors`}
+          >
+            <LogOut size={12} />
+            退出登录
+          </button>
         </div>
       )}
 

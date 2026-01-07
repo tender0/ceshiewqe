@@ -1,22 +1,36 @@
-name: Build and Release
+name: Build Test
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+      - dev
+    paths:
+      - 'src/**'
+      - 'src-tauri/**'
+      - 'package.json'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  build:
+  # 测试构建 - 不发布
+  build-test:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-22.04, windows-latest]
+        include:
+          - platform: windows-latest
+            target: ''
+            name: Windows
+          - platform: macos-latest
+            target: 'universal-apple-darwin'
+            name: macOS Universal
 
     runs-on: ${{ matrix.platform }}
+    name: Build ${{ matrix.name }}
     
     steps:
       - name: Checkout repository
@@ -27,44 +41,32 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Rust (Ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Install dependencies (Ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'x86_64-apple-darwin,aarch64-apple-darwin' || '' }}
 
       - name: Install frontend dependencies
         run: npm install
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run tauri build ${{ matrix.target && format('-- --target {0}', matrix.target) || '' }}
+
+      - name: Upload artifacts (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Kiro Account Manager ${{ github.ref_name }}'
-          releaseBody: |
-            ## 🎉 Kiro Account Manager ${{ github.ref_name }}
-            
-            ### 📦 下载说明
-            - **Windows**: 下载 `.msi` 或 `.exe` 文件
-            - **macOS (Intel)**: 下载 `x64.dmg`
-            - **macOS (Apple Silicon)**: 下载 `aarch64.dmg`
-            - **Linux**: 下载 `.AppImage` 或 `.deb`
-            
-            ### ✨ 主要功能
-            - 🔐 多账号管理
-            - 👥 用户注册/登录系统
-            - 🛡️ 管理员后台面板
-            - 📊 账号分配管理
-            - 🎨 多主题支持
-            - 🌍 多语言支持
-            
-            ### 📝 更新日志
-            查看完整更新日志请访问 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
-          releaseDraft: false
-          prerelease: false
+          name: windows-build
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 7
+
+      - name: Upload artifacts (macOS)
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-universal-build
+          path: |
+            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          retention-days: 7

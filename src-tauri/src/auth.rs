@@ -126,7 +126,8 @@ pub struct BonusInfo {
 /// 使用桌面端 API 刷新 Token（只需要 RefreshToken）
 pub async fn refresh_token_desktop(refresh_token: &str) -> Result<DesktopRefreshResponse, String> {
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
+        .timeout(std::time::Duration::from_secs(60))  // 增加到 60 秒
+        .connect_timeout(std::time::Duration::from_secs(30))  // 连接超时 30 秒
         .build()
         .map_err(|e| format!("Failed to create client: {}", e))?;
     
@@ -138,7 +139,8 @@ pub async fn refresh_token_desktop(refresh_token: &str) -> Result<DesktopRefresh
     let mut last_error = String::new();
     for attempt in 0..3 {
         if attempt > 0 {
-            tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+            println!("[Desktop] Retry attempt {} after network error...", attempt);
+            tokio::time::sleep(std::time::Duration::from_millis(2000)).await;
         }
         
         match client
@@ -177,7 +179,8 @@ pub async fn refresh_token_desktop(refresh_token: &str) -> Result<DesktopRefresh
                     .map_err(|e| format!("Parse failed: {}", e));
             }
             Err(e) => {
-                last_error = format!("网络错误: {}", e);
+                last_error = format!("网络请求失败: {} (请检查网络连接或代理设置)", e);
+                println!("[Desktop] Network error: {}", e);
                 continue;
             }
         }
@@ -189,7 +192,8 @@ pub async fn refresh_token_desktop(refresh_token: &str) -> Result<DesktopRefresh
 /// 使用桌面端 API 获取配额和用户信息
 pub async fn get_usage_limits_desktop(access_token: &str) -> Result<DesktopUsageResponse, String> {
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
+        .timeout(std::time::Duration::from_secs(60))  // 增加到 60 秒
+        .connect_timeout(std::time::Duration::from_secs(30))  // 连接超时 30 秒
         .build()
         .map_err(|e| format!("Failed to create client: {}", e))?;
     
@@ -207,7 +211,8 @@ pub async fn get_usage_limits_desktop(access_token: &str) -> Result<DesktopUsage
     let mut last_error = String::new();
     for attempt in 0..3 {
         if attempt > 0 {
-            tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+            println!("[Social] Retry attempt {} after network error...", attempt);
+            tokio::time::sleep(std::time::Duration::from_millis(2000)).await;
         }
         
         match client
@@ -249,7 +254,8 @@ pub async fn get_usage_limits_desktop(access_token: &str) -> Result<DesktopUsage
                     .map_err(|e| format!("Parse failed: {}", e));
             }
             Err(e) => {
-                last_error = format!("网络错误: {}", e);
+                last_error = format!("网络请求失败: {} (请检查网络连接或代理设置)", e);
+                println!("[Social] Network error: {}", e);
                 continue;
             }
         }

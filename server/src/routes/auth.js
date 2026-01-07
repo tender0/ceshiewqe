@@ -2,6 +2,7 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import db from '../db/index.js'
 import { generateToken, authUser, authAdmin } from '../middleware/auth.js'
+import { validateEmail, normalizeEmail, checkEmailExists, ERROR_CODES, ERROR_MESSAGES } from '../utils/emailValidator.js'
 
 const router = express.Router()
 
@@ -14,16 +15,25 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: '邮箱和密码不能为空' })
     }
     
-    // 验证邮箱格式
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: '邮箱格式不正确' })
+    // 使用新的邮箱验证模块验证格式
+    const validationResult = validateEmail(email)
+    if (!validationResult.isValid) {
+      return res.status(400).json({ 
+        error: validationResult.error,
+        errorCode: validationResult.errorCode
+      })
     }
     
-    // 检查邮箱是否已存在
-    const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email)
-    if (existing) {
-      return res.status(400).json({ error: '该邮箱已被注册' })
+    // 规范化邮箱（去除空格、转小写）
+    const normalizedEmail = normalizeEmail(email)
+    
+    // 检查邮箱是否已存在（大小写不敏感）
+    const emailExists = await checkEmailExists(normalizedEmail)
+    if (emailExists) {
+      return res.status(400).json({ 
+        error: ERROR_MESSAGES[ERROR_CODES.EMAIL_EXISTS],
+        errorCode: ERROR_CODES.EMAIL_EXISTS
+      })
     }
     
     // 密码长度验证
@@ -32,16 +42,17 @@ router.post('/register', async (req, res) => {
     }
     
     const passwordHash = bcrypt.hashSync(password, 10)
+    // 存储规范化后的邮箱
     const result = await db.prepare('INSERT INTO users (email, password_hash, nickname) VALUES (?, ?, ?)')
-      .run(email, passwordHash, nickname || null)
+      .run(normalizedEmail, passwordHash, nickname || null)
     
-    const token = generateToken({ id: result.lastInsertRowid, email, type: 'user' })
+    const token = generateToken({ id: result.lastInsertRowid, email: normalizedEmail, type: 'user' })
     
     res.json({ 
       token, 
       user: { 
         id: result.lastInsertRowid, 
-        email, 
+        email: normalizedEmail, 
         nickname: nickname || null 
       } 
     })
@@ -60,7 +71,10 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: '邮箱和密码不能为空' })
     }
     
-    const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email)
+    // 规范化邮箱进行大小写不敏感查询
+    const normalizedEmail = normalizeEmail(email)
+    
+    const user = await db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(normalizedEmail)
     if (!user) {
       return res.status(401).json({ error: '邮箱或密码错误' })
     }

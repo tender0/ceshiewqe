@@ -110,14 +110,22 @@ function AccountManager() {
     setSwitchingId(account.id)
     
     try {
-      // 读取设置，判断是否自动更换机器码
+      // 切换账号时始终重置机器码（Requirements 3.1, 3.2, 3.3, 3.4）
+      try {
+        await invoke('reset_system_machine_guid')
+        console.log('[MachineId] Machine ID reset on account switch')
+      } catch (e) {
+        // 重置失败不阻塞切换流程（Requirement 3.3）
+        console.error('[MachineId] Failed to reset machine ID:', e)
+      }
+      
+      // 读取设置，判断是否使用绑定机器码（高级功能）
       const appSettings = await invoke('get_app_settings').catch(() => ({}))
-      const autoChangeMachineId = appSettings.autoChangeMachineId ?? false
       const bindMachineIdToAccount = appSettings.bindMachineIdToAccount ?? false
       const useBoundMachineId = appSettings.useBoundMachineId ?? true
       
-      // 处理账号绑定机器码逻辑
-      if (autoChangeMachineId && bindMachineIdToAccount) {
+      // 处理账号绑定机器码逻辑（如果启用）
+      if (bindMachineIdToAccount) {
         try {
           // 获取账号绑定的机器码
           let boundMachineId = await invoke('get_bound_machine_id', { accountId: account.id }).catch(() => null)
@@ -134,7 +142,6 @@ function AccountManager() {
             await invoke('set_custom_machine_guid', { newGuid: boundMachineId })
             console.log(`[MachineId] Switched to bound machine ID for account: ${account.email}`)
           }
-          // 如果不使用绑定的机器码，后面的 resetMachineId 会随机生成
         } catch (e) {
           console.error('[MachineId] Failed to handle bound machine ID:', e)
         }
@@ -144,14 +151,13 @@ function AccountManager() {
       const authMethod = isIdC ? 'IdC' : 'social'
       
       // 直接使用账号中的 token 进行切换，不再刷新
-      // 如果启用了绑定机器码且使用绑定的，不需要再 resetMachineId
-      const shouldResetMachineId = autoChangeMachineId && !(bindMachineIdToAccount && useBoundMachineId)
+      // 机器码已在上面重置，不需要再通过 switch_kiro_account 重置
       const params = {
         accessToken: account.accessToken,
         refreshToken: account.refreshToken,
         provider: account.provider || 'Google',
         authMethod,
-        resetMachineId: shouldResetMachineId,
+        resetMachineId: false,
         autoRestart: false
       }
       

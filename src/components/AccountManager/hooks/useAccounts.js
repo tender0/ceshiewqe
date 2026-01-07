@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { getQuota, getUsed } from '../../../utils/accountStats'
 
 export function useAccounts() {
   const [accounts, setAccounts] = useState([])
@@ -41,12 +40,12 @@ export function useAccounts() {
       setRefreshProgress(prev => ({ ...prev, currentEmail: account.email }))
       let success = false, message = ''
       try {
-        // 只刷新 token，不获取 usage
-        const updated = await invoke('refresh_account_token', { id: account.id })
+        // 使用 sync_account 同时刷新 token 和 usage 数据
+        const updated = await invoke('sync_account', { id: account.id })
         const idx = updatedAccounts.findIndex(a => a.id === account.id)
         if (idx !== -1) updatedAccounts[idx] = updated
         success = true
-        message = 'Token 已刷新'
+        message = 'Token 和使用量已刷新'
       } catch (e) {
         message = String(e).slice(0, 30)
       }
@@ -72,10 +71,9 @@ export function useAccounts() {
       return { success: true }
     } catch (e) {
       console.warn(e)
-      // 更新账号状态为错误信息
-      const errorMsg = String(e)
-      setAccounts(prev => prev.map(a => a.id === id ? { ...a, status: errorMsg.includes('401') || errorMsg.includes('过期') ? 'Token已失效' : '刷新失败' } : a))
-      return { success: false, error: errorMsg }
+      // 刷新失败时不修改账号状态，保持原有状态（正常/封禁）
+      // 状态只由后端 API 返回决定
+      return { success: false, error: String(e) }
     } finally {
       setRefreshingId(null)
     }

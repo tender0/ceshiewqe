@@ -30,17 +30,17 @@ function AccountCard({
   const breakdown = account.usageData?.usageBreakdownList?.[0]
   const percent = getUsagePercent(used, quota)
   const isExpired = account.expiresAt && new Date(account.expiresAt.replace(/\//g, '-')) < new Date()
+  // 状态只有两种：正常 和 封禁
   const isBanned = account.status === '封禁' || account.status === '已封禁'
-  const isNormal = account.status === '正常' || account.status === '有效'
+  const isNormal = !isBanned  // 非封禁即为正常
+  const displayStatus = isBanned ? '封禁' : '正常'
 
-  // 状态光环颜色
+  // 状态光环颜色（只有正常和封禁两种状态）
   const glowColor = isCurrentAccount
     ? 'shadow-green-500/30 hover:shadow-green-500/50'
     : isBanned
       ? 'shadow-red-500/30 hover:shadow-red-500/50'
-      : isNormal
-        ? ''
-        : 'shadow-orange-500/30 hover:shadow-orange-500/50'
+      : ''
 
   return (
     <div className={`relative rounded-2xl border transition-all duration-200 hover:shadow-lg flex flex-col ${glowColor} ${
@@ -50,9 +50,7 @@ function AccountCard({
           ? (isDark ? 'border-green-500/50 bg-green-500/5' : 'border-green-400 bg-green-50/50')
           : isBanned
             ? (isDark ? 'border-red-500/50 bg-red-500/5' : 'border-red-300 bg-red-50/50')
-            : !isNormal
-              ? (isDark ? 'border-orange-500/50 bg-orange-500/5' : 'border-orange-300 bg-orange-50/50')
-              : (isDark ? 'border-gray-700 bg-gray-800/50 hover:border-gray-600' : 'border-gray-200 bg-white hover:border-gray-300')
+            : (isDark ? 'border-gray-700 bg-gray-800/50 hover:border-gray-600' : 'border-gray-200 bg-white hover:border-gray-300')
     }`}>
       {/* 选择框和当前使用标记 */}
       <div className="absolute top-3 left-3 flex items-center gap-2">
@@ -67,12 +65,10 @@ function AccountCard({
       {/* 状态标签 */}
       <div className="absolute top-3 right-3 flex items-center gap-2">
         <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
-          account.status === '正常' || account.status === '有效'
+          isNormal
             ? (isDark ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-700')
-            : account.status === '封禁' || account.status === '已封禁'
-              ? (isDark ? 'bg-red-500/20 text-red-400' : 'bg-red-100 text-red-600')
-              : (isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600')
-        }`}>{account.status}</span>
+            : (isDark ? 'bg-red-500/20 text-red-400' : 'bg-red-100 text-red-600')
+        }`}>{displayStatus}</span>
       </div>
 
       <div className="p-4 pt-10 flex-1 flex flex-col">

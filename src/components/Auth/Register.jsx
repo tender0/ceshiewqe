@@ -1,16 +1,43 @@
 import { useState } from 'react'
-import { Mail, Lock, UserPlus, ArrowLeft } from 'lucide-react'
+import { Mail, Lock, UserPlus, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useDialog } from '../../contexts/DialogContext'
+import { useEmailValidation } from '../../hooks/useEmailValidation'
 
 function Register({ onRegister, onSwitchToLogin, apiBaseUrl }) {
   const { colors } = useTheme()
   const { showError } = useDialog()
-  const [email, setEmail] = useState('')
+  const {
+    email,
+    setEmail: handleEmailChange,
+    isValid: isEmailValid,
+    isValidating: isEmailValidating,
+    error: emailError,
+    touched: emailTouched,
+    handleBlur: handleEmailBlur,
+    getNormalizedEmail,
+  } = useEmailValidation('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [nickname, setNickname] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // 获取邮箱输入框的边框样式
+  const getEmailBorderClass = () => {
+    if (!emailTouched && !email) {
+      return colors.cardBorder // 默认边框
+    }
+    if (isEmailValidating) {
+      return 'border-blue-400' // 验证中
+    }
+    if (isEmailValid) {
+      return 'border-green-500' // 验证通过 - 绿色边框
+    }
+    if (emailError) {
+      return 'border-red-500' // 验证失败 - 红色边框
+    }
+    return colors.cardBorder
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -20,10 +47,9 @@ function Register({ onRegister, onSwitchToLogin, apiBaseUrl }) {
       return
     }
 
-    // 邮箱格式验证
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      showError('错误', '请输入正确的邮箱格式')
+    // 使用新的邮箱验证逻辑 - 阻止表单提交如果邮箱无效
+    if (!isEmailValid) {
+      showError('错误', emailError || '请输入正确的邮箱格式')
       return
     }
 
@@ -39,10 +65,12 @@ function Register({ onRegister, onSwitchToLogin, apiBaseUrl }) {
 
     setLoading(true)
     try {
+      // 使用规范化后的邮箱提交
+      const normalizedEmail = getNormalizedEmail()
       const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, nickname: nickname || null })
+        body: JSON.stringify({ email: normalizedEmail, password, nickname: nickname || null })
       })
 
       const data = await response.json()
@@ -84,11 +112,28 @@ function Register({ onRegister, onSwitchToLogin, apiBaseUrl }) {
               <input
                 type="text"
                 value={email}
-                onChange={(e) => setEmail(e.target.value.trim())}
-                className={`w-full pl-10 pr-4 py-3 ${colors.input} border ${colors.cardBorder} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${colors.text}`}
+                onChange={(e) => handleEmailChange(e.target.value)}
+                onBlur={handleEmailBlur}
+                className={`w-full pl-10 pr-10 py-3 ${colors.input} border ${getEmailBorderClass()} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${colors.text} transition-colors`}
                 placeholder="请输入邮箱"
               />
+              {/* 验证状态指示器 */}
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                {isEmailValidating && (
+                  <Loader2 className="text-blue-400 animate-spin" size={18} />
+                )}
+                {!isEmailValidating && isEmailValid && email && (
+                  <CheckCircle className="text-green-500" size={18} />
+                )}
+                {!isEmailValidating && emailError && emailTouched && (
+                  <AlertCircle className="text-red-500" size={18} />
+                )}
+              </div>
             </div>
+            {/* 错误消息显示 */}
+            {emailError && emailTouched && (
+              <p className="mt-1 text-sm text-red-500">{emailError}</p>
+            )}
           </div>
 
           <div>

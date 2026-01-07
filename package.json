@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "extract": "lingui extract",
-    "compile": "lingui compile"
+    "compile": "lingui compile",
+    "test": "vitest --run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -37,9 +39,11 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "babel-plugin-macros": "3.1.0",
+    "fast-check": "^4.5.3",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
     "terser": "5.44.1",
-    "vite": "^5.0.8"
+    "vite": "^5.0.8",
+    "vitest": "^4.0.16"
   }
 }

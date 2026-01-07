@@ -489,5 +489,58 @@ router.get('/audit-logs', async (req, res) => {
   }
 })
 
+// 获取系统设置
+router.get('/settings', async (req, res) => {
+  try {
+    // 返回默认设置
+    res.json({
+      settings: {
+        allowRegistration: true,
+        requireInviteCode: false,
+        inviteCodes: '',
+        maxAssignmentsPerUser: 1,
+        autoApproveAssignment: false
+      }
+    })
+  } catch (error) {
+    console.error('Get settings error:', error)
+    res.status(500).json({ error: '获取设置失败' })
+  }
+})
+
+// 更新系统设置
+router.put('/settings', async (req, res) => {
+  try {
+    // 暂时只返回成功，不实际保存
+    res.json({ message: '设置已保存' })
+  } catch (error) {
+    console.error('Update settings error:', error)
+    res.status(500).json({ error: '保存设置失败' })
+  }
+})
+
+// 导出数据
+router.get('/export/:type', async (req, res) => {
+  try {
+    const { type } = req.params
+    let data = {}
+    
+    if (type === 'users') {
+      data = await db.prepare('SELECT * FROM users').all()
+    } else if (type === 'accounts') {
+      data = await db.prepare('SELECT * FROM kiro_accounts').all()
+    } else if (type === 'assignments') {
+      data = await db.prepare('SELECT * FROM assignments').all()
+    } else {
+      return res.status(400).json({ error: '无效的导出类型' })
+    }
+    
+    res.json(data)
+  } catch (error) {
+    console.error('Export data error:', error)
+    res.status(500).json({ error: '导出失败' })
+  }
+})
+
 export default router
 

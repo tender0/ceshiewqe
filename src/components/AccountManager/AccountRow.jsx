@@ -30,6 +30,9 @@ function AccountRow({
   const breakdown = account.usageData?.usageBreakdownList?.[0]
   const percent = getUsagePercent(used, quota)
   const isExpired = account.expiresAt && new Date(account.expiresAt.replace(/\//g, '-')) < new Date()
+  // 状态只有两种：正常 和 封禁
+  const isBanned = account.status === '封禁' || account.status === '已封禁'
+  const displayStatus = isBanned ? '封禁' : '正常'
 
   return (
     <tr 
@@ -101,10 +104,10 @@ function AccountRow({
       </td>
       <td className="px-4 py-3">
         <span className={`inline-flex px-2 py-1 rounded-lg text-xs font-medium transition-transform hover:scale-105 ${
-          account.status === '正常' || account.status === '有效'
+          !isBanned
             ? (isDark ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-700')
             : (isDark ? 'bg-red-500/20 text-red-400' : 'bg-red-100 text-red-600')
-        }`}>{account.status}</span>
+        }`}>{displayStatus}</span>
       </td>
       <td className="px-4 py-3">
         {account.expiresAt ? (
